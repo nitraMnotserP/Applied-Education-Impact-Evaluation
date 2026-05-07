@@ -1,4 +1,4 @@
-# Applied Education Program Evaluation: Causal, Longitudinal, and Multilevel Analyses
+# Applied Education Program Evaluation: Longitudinal, and Multilevel Analyses
 
 This repository contains selected, anonymized code from real K–12 education
 program evaluation projects. The analyses demonstrate how rigorous causal
