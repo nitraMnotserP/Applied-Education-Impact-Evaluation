@@ -1,49 +1,49 @@
-# Applied Education Program Evaluation: Longitudinal, Multilevel, and Measurement‑Informed Analyses
+# Applied Education Data Analysis: Measurement, Longitudinal, Multilevel, and Survey‑Based Approaches
 
-This repository contains selected, anonymized code from real K–12 education
-program evaluation projects. The analyses demonstrate how rigorous causal
-designs can be combined with **measurement modeling**, **longitudinal growth
-analysis**, and **multilevel multiple‑membership models** to evaluate educational
-interventions using administrative data.
+This repository contains selected, anonymized code from applied education
+research and analysis projects. The analyses demonstrate how **measurement
+modeling**, **longitudinal analysis**, **multilevel modeling**, and
+**design‑based survey methods** can be combined to study educational processes
+and outcomes using administrative and large‑scale survey data.
 
-All intervention names and identifying details have been anonymized to protect
-confidentiality.
+Projects span program evaluation, observational research, and policy‑relevant
+analysis. All identifying details, program names, and data paths have been
+anonymized to protect confidentiality.
 
 ---
 
-## Project Overview
+## Portfolio Overview
 
-Educational program evaluations frequently rely on observational administrative
-data in which:
+Applied education research frequently relies on complex, non‑experimental data
+sources in which:
 
-- Students are not randomly assigned to interventions  
+- Students are not randomly assigned to programs or experiences  
 - Outcomes are observed repeatedly over time  
 - Students may be taught by multiple instructors within a school year  
 - Assessments are scored by different raters or observers  
+- Data arise from complex survey designs with unequal selection probabilities  
 - School and classroom contexts introduce meaningful clustering  
 
-This repository presents applied analytic workflows designed to address these
-real‑world constraints while producing defensible evidence about intervention
-effects.
+This repository presents analytic workflows designed to address these
+real‑world complexities while producing transparent, defensible, and
+policy‑relevant insights.
 
-Across analyses, the overarching goal is to estimate credible program impacts
-while making assumptions explicit and maintaining transparency in design,
-measurement, and modeling decisions.
+Across analyses, the overarching goal is to make analytic assumptions explicit
+and to align modeling choices with the structure of the data.
 
 ---
 
 ## Analytic Framework
 
-Three complementary analytic strategies are represented **equally** in this
-repository. Each addresses a distinct but common challenge in education
-evaluation.
+Four complementary analytic approaches are represented in this repository.
+Each addresses a common challenge in applied education research and analytics.
 
 ---
-### 1. Causal Multilevel Analysis: Multiple‑Membership Models
 
-A third set of analyses addresses instructional complexity in educational
-settings where students are taught by **more than one teacher** within a given
-period.
+### 1. Multilevel Analysis: Multiple‑Membership Models
+
+One set of analyses addresses instructional complexity in educational settings
+where students are taught by **more than one teacher** within a given period.
 
 These analyses emphasize:
 
@@ -53,18 +53,18 @@ These analyses emphasize:
   outcomes
 - Fixed effects for student‑ and school‑level covariates when cluster sizes are
   small
-- Estimation of intervention effects under realistic teacher assignment
-  structures
+- Estimation of effects under realistic teacher assignment structures
 
 This approach is especially well‑suited for cumulative outcomes (such as GPA)
-and for evaluations where attributing effects to a single instructor would be
+and for analyses where attributing outcomes to a single instructor would be
 misleading.
 
 ---
-### 2. Measurement‑Informed Analysis: Many‑Facet Rasch Models
 
-One set of analyses focuses on **assessment measurement and rater effects** in
-contexts where student performance is evaluated by multiple observers across
+### 2. Measurement‑Focused Analysis: Many‑Facet Rasch Models
+
+A second set of analyses focuses on **assessment measurement and rater effects**
+in contexts where student performance is evaluated by multiple observers across
 time.
 
 These analyses emphasize:
@@ -73,90 +73,102 @@ These analyses emphasize:
   - Item difficulty  
   - Rating scale structure  
   - Rater severity and rater‑by‑item interactions  
-- Separate model estimation for pre‑ and post‑intervention observation waves
+- Separate model estimation for pre‑ and post‑observation waves
 - Diagnostic evaluation using:
   - Fit statistics  
   - Threshold estimates  
   - Wright Maps and characteristic curves  
 - Extraction of rater‑adjusted ability estimates for downstream analysis
 
-This measurement step ensures that observed changes in performance reflect
-meaningful differences in student ability rather than shifts in rater behavior
-or assessment difficulty. The resulting adjusted scores are then used as inputs
-for descriptive, comparative, and regression‑based analyses.
+This measurement step helps ensure that observed differences reflect meaningful
+variation in student performance rather than artifacts of rater behavior or
+instrument design.
 
 ---
-### 3. Causal Longitudinal Analysis: Latent Growth Curve Modeling
 
-A second set of analyses focuses on **student achievement trajectories measured
-over time**, with particular attention to how an intervention influences both
-initial status and growth.
+### 3. Longitudinal Analysis: Latent Growth Curve Modeling
 
-Key features of this approach include:
+A third set of analyses focuses on **student achievement trajectories measured
+over time**, with attention to how educational experiences relate to both
+initial status and change.
 
-- Quarterly outcome measurement (e.g., course grades or assessment scores)
+Key features include:
+
+- Repeated outcome measurement across multiple time points
 - Latent Growth Curve Models (LGCMs) estimated via structural equation modeling
-- Linear growth specified across multiple time points
-- Intervention effects estimated on:
-  - The **intercept** (baseline achievement)
-  - The **slope** (rate of academic change over time)
+- Linear growth specified across observation periods
+- Effects estimated on:
+  - The **intercept** (baseline performance)
+  - The **slope** (rate of change over time)
 - Full Information Maximum Likelihood (FIML) used to address missing data under a
   Missing at Random (MAR) assumption
 
-Prior to growth modeling, propensity score matching is used to construct a
-defensible comparison group and to separate study design from outcome analysis.
-Descriptive trajectory plots are examined to assess functional form and guide
-model specification.
+These models are used both descriptively and in combination with design‑based
+approaches to support causal interpretation where appropriate.
 
 ---
 
+### 4. Design‑Based Survey Analysis: Complex Survey Data
 
-## Shared Design Elements Across Analyses
+A fourth set of analyses demonstrates the use of **nationally representative
+education survey data**, incorporating survey design features directly into
+estimation and inference.
 
-All analytic approaches in this repository rely on a common causal design
-foundation.
+These analyses emphasize:
+
+- Use of replicate‑weight variance estimation (e.g., BRR)
+- Integration of multiple imputation with survey design objects
+- Design‑based generalized linear models
+- Estimation of marginal effects on interpretable probability scales
+- Subpopulation analyses conducted within the survey framework
+
+This approach is critical when working with large‑scale federal datasets (such
+as NCES longitudinal studies) where valid inference depends on respecting the
+sampling design.
+
+---
+
+## Shared Analytic Principles Across Projects
+
+Despite methodological differences, all analyses in this repository share a
+common set of principles.
 
 ### Data Integration and Preparation
 - Student‑level administrative records spanning multiple cohorts
 - Assessment data scored by multiple raters across observation waves
+- Large‑scale survey data with complex sampling designs
 - Publicly available school‑level contextual data (e.g., NCES indicators)
-- Harmonization of variables across cohorts, raters, and data sources
+- Careful harmonization of variables across sources and time
 
-### Causal Design
-- Propensity score matching using optimal matching
-- Exact matching on cohort year and grade level to enforce overlap
-- Balance diagnostics using standardized mean differences
-- Visualization of balance via love plots
-- Explicit separation of:
+### Design and Modeling Transparency
+- Clear separation of:
   - Measurement
   - Design
-  - Outcome modeling stages
+  - Outcome modeling
+- Explicit documentation of assumptions
+- Diagnostic checks aligned with each analytic approach
 
 ### Equity‑Relevant Covariates
 - Attendance and discipline indicators
 - Student demographic characteristics
-- School‑level socioeconomic context (e.g., FRPL, Title I status)
+- Socioeconomic context at the student and school level
 
 ---
 
 ## Why These Analyses Matter
 
-Many education interventions are implemented in environments where traditional
-analytic assumptions—such as random assignment, independent observations, stable
-measurement, or single‑teacher exposure—do not hold.
+Educational data rarely conform to the assumptions of simple statistical models.
+Ignoring measurement error, clustering, time, or survey design can lead to
+misleading conclusions.
 
-Together, the **measurement models**, **longitudinal growth models**, and
-**multiple‑membership multilevel models** in this repository demonstrate how
-evaluators can:
+Together, the **measurement models**, **longitudinal models**, **multilevel
+models**, and **design‑based survey analyses** in this repository demonstrate
+how applied analysts can:
 
-- Adapt rigorous methods to administrative and assessment data
-- Address measurement error, time, clustering, and instructional complexity
-  directly
-- Produce estimates that are both methodologically credible and practically
-  useful for decision‑making
-
-Findings from analyses such as these have been used to support program
-improvement, stakeholder communication, and evidence‑based policy discussions.
+- Align analytic methods with data structure
+- Address complexity directly rather than through ad‑hoc adjustments
+- Produce results that are both methodologically sound and practically useful
+for research, evaluation, and policy contexts
 
 ---
 
@@ -174,7 +186,7 @@ improvement, stakeholder communication, and evidence‑based policy discussions.
 ## Contact
 
 **Preston Martin, Ph.D.**  
-Applied Learning Scientist & Impact Evaluation Researcher  
+Applied Learning Scientist & Education Data Analyst  
 
 - LinkedIn: https://www.linkedin.com/in/prestonmartin1  
 - GitHub: https://github.com/nitraMnotserP
