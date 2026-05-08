@@ -1,0 +1,191 @@
+################################################################################
+## Project: Post-secondary Enrollment Analysis Using Complex Survey Data
+## Script:  Design-Based Modeling with Multiple Imputation and BRR Weights
+##
+## Purpose:
+##   This script demonstrates an applied complex survey analysis workflow using
+##   multiply imputed data and Balanced Repeated Replication (BRR) weights.
+##   The analysis estimates design-based logistic regression models of
+##   post-secondary enrollment and reports marginal effects on the probability
+##   scale.
+##
+##   This code represents a focused excerpt from a larger dissertation
+##   analysis. File paths and identifiers have been anonymized for
+##   portfolio submission.
+################################################################################
+
+################################################################################
+## Load Required Packages
+################################################################################
+library(tidyverse)
+library(survey)
+library(mitools)
+library(RSQLite)
+library(marginaleffects)
+
+################################################################################
+## Read Imputed Data and Replicate Weights
+################################################################################
+## Note: File paths are illustrative
+
+imps_long <- read.csv("Enrollment_Imputed_Long.csv")
+
+weights <- read.csv("BRR_weights.csv") %>%
+  select(-X)
+
+################################################################################
+## Split Imputed Data into List Structure
+################################################################################
+imp_list <- imps_long %>%
+  split(.$.imp)
+
+################################################################################
+## Merge Replicate Weights into Each Imputed Dataset
+################################################################################
+imp_list <- lapply(imp_list, function(df) {
+  df %>%
+    left_join(weights, by = "stu_id") %>%
+    select(-X)
+})
+
+################################################################################
+## Construct Analytic Variables
+################################################################################
+imp_list <- lapply(imp_list, function(df) {
+  
+  df %>%
+    mutate(
+      ## Geographic context
+      city  = if_else(Locale == "CITY",  1, 0, missing = NA_real_),
+      rural = if_else(Locale == "RURAL", 1, 0, missing = NA_real_),
+      town  = if_else(Locale == "TOWN",  1, 0, missing = NA_real_),
+      
+      ## School sector
+      private = if_else(
+        School_type == "CATHOLIC OR OTHER PRIVATE",
+        1, 0, missing = NA_real_
+      ),
+      
+      ## Advanced math coursework
+      high_math_course = case_when(
+        high_math_course %in% c("MISSING", "UNIT NON-RESPONSE") ~ NA_real_,
+        high_math_course %in% c(
+          "NO MATH", "BASIC MATH", "OTHER MATH", "PRE-ALGEBRA",
+          "ALGEBRA I", "GEOMETRY", "ALGEBRA II", "TRIGONOMETRY",
+          "OTHER ADVANCED MATH", "PROBABILITY AND STATISTICS",
+          "OTHER AP/IB MATH"
+        ) ~ 0,
+        high_math_course %in% c(
+          "AP/IB CALCULUS", "CALCULUS", "PRECALCULUS"
+        ) ~ 1
+      ),
+      
+      ## Postsecondary enrollment outcome
+      enrolled = case_when(
+        enrolled == "YES" ~ 1,
+        enrolled == "NO"  ~ 0,
+        enrolled %in% c("MISSING", "UNIT NON-RESPONSE") ~ NA_real_
+      ),
+      
+      ## Demographics
+      Black = if_else(Race == "BLACK/AFRICAN-AMERICAN, NON-HISPANIC", 1, 0),
+      Hispanic = if_else(
+        Race %in% c("HISPANIC, NO RACE SPECIFIED", "HISPANIC, RACE SPECIFIED"),
+        1, 0
+      ),
+      Asian = if_else(Race == "ASIAN, NON-HISPANIC", 1, 0),
+      White = if_else(Race == "WHITE, NON-HISPANIC", 1, 0),
+      Othrace = if_else(
+        Race %in% c(
+          "AMER. INDIAN/ALASKA NATIVE, NON-HISPANIC",
+          "MORE THAN ONE RACE, NON-HISPANIC",
+          "NATIVE HAWAIIAN/PACIFIC ISLANDER, NON-HISPANIC"
+        ),
+        1, 0
+      ),
+      male = if_else(Gender == "MALE", 1, 0, missing = NA_real_),
+      
+      ## Math achievement groups
+      Low_math  = if_else(Math_Ach <  48.45357, 1, 0, missing = NA_real_),
+      Mid_math  = if_else(Math_Ach >= 48.45357 & Math_Ach <= 56.55437, 1, 0, missing = NA_real_),
+      High_math = if_else(Math_Ach >  56.55437, 1, 0, missing = NA_real_),
+      
+      ## SES groups
+      Low_SES  = if_else(SES <  -0.2769667, 1, 0, missing = NA_real_),
+      Mid_SES  = if_else(SES >= -0.2769667 & SES <= 0.4240000, 1, 0, missing = NA_real_),
+      High_SES = if_else(SES >   0.4240000, 1, 0, missing = NA_real_),
+      
+      ## SES × Achievement combinations (policy-relevant contrasts)
+      lowS_midM   = if_else(Low_SES == 1  & Mid_math  == 1, 1, 0, missing = NA_real_),
+      lowS_highM  = if_else(Low_SES == 1  & High_math == 1, 1, 0, missing = NA_real_),
+      midS_midM   = if_else(Mid_SES == 1  & Mid_math  == 1, 1, 0, missing = NA_real_),
+      midS_highM  = if_else(Mid_SES == 1  & High_math == 1, 1, 0, missing = NA_real_),
+      highS_lowM  = if_else(High_SES == 1 & Low_math  == 1, 1, 0, missing = NA_real_),
+      highS_midM  = if_else(High_SES == 1 & Mid_math  == 1, 1, 0, missing = NA_real_),
+      highS_highM = if_else(High_SES == 1 & High_math == 1, 1, 0, missing = NA_real_)
+    )
+})
+
+################################################################################
+## Create Survey Design Object (BRR with Multiple Imputation)
+################################################################################
+
+## Create imputation list
+impdata <- imputationList(
+  imp_list,
+  dbtype = "SQLite",
+  dbname = "imp_survey_design.db"
+)
+
+## Define full survey design
+hsls <- svrepdesign(
+  weights = ~w4w1w2w3stu,
+  repweights = "w4w1w2w3stu[001-200]+",
+  type = "BRR",
+  data = impdata,
+  combined.weights = TRUE
+)
+
+## Restrict to students with a high school diploma or equivalent
+hsls_svy <- subset(hsls, s4hscred > 0 | s3hscredtype > 0)
+
+################################################################################
+## Design-Based Logistic Regression
+################################################################################
+mod1 <- with(
+  hsls_svy,
+  svyglm(
+    enrolled ~ Black + Hispanic + Asian + Othrace + male +
+      high_math_course + rural + city + town + private +
+      lowS_midM + lowS_highM + midS_midM + midS_highM +
+      highS_lowM + highS_midM + highS_highM +
+      school_climate + mathTach_expect +
+      PerSchDisorder + PerBarEffTch,
+    family = quasibinomial("logit"),
+    multicore = TRUE
+  )
+)
+
+mod1_tab <- summary(MIcombine(mod1), digits = 3)
+mod1_tab$OR <- exp(mod1_tab$results)
+mod1_tab
+
+################################################################################
+## Average Marginal Effects (Probability Scale)
+################################################################################
+mod1_ame <- lapply(mod1, function(m) {
+  avg_slopes(
+    m,
+    variables = c(
+      "lowS_midM", "lowS_highM",
+      "midS_midM", "midS_highM",
+      "highS_lowM", "highS_midM",
+      "highS_highM"
+    ),
+    type = "response"
+  )
+})
+
+## Pool marginal effects across imputations
+mod1_ame_pooled <- summary(MIcombine(mod1_ame))
+mod1_ame_pooled
